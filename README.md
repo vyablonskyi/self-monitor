@@ -7,7 +7,7 @@ Create python script which will accept 4 arguments:
 
 Ansible playbook requirements:
 
-1)Grafana
+1) Grafana
 -    Should be configured as a backend for Apache
 -    MySQL should be used as Grafana storage
 -    Grafana must contain Dashboard with system performance metrics of local vagrant host
@@ -16,12 +16,12 @@ Ansible playbook requirements:
 -    Dashboard must be available without authentication
 
 
-2)Graphite
+2) Graphite
 -    Should accept metrics from Collectd on 2003 port
 -    Should be available for Grafana as a datasource
 
 
-3)Apache
+3) Apache
 -    Should be configured to listen on 443 port with self-signed SSL certificates
 -    Grafana needs to be available under /grafana location
 
