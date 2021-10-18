@@ -31,8 +31,8 @@ The test is considered passed if we are able to get result through the following
 git clone https://github.com/username/self-monitor.git
 python ./self-monitor/self-monitor.py init
 
-VirtualBox, Vagrant and Ansible should be installed on your machine.
+VirtualBox, Vagrant, Ansible and Python-vagrant library should be installed on your machine.
 -    VirtualBox installation is accessible [here](https://www.virtualbox.org/wiki/Linux_Downloads)
 -    Vagrant — [here](https://www.vagrantup.com/downloads.html)
 -    Ansibe - [here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
--    Python-vagrant library should be installed ```pip install python-vagrant```
+-    Python-vagrant library - ```pip install python-vagrant```
