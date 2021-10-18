@@ -35,3 +35,4 @@ VirtualBox, Vagrant and Ansible should be installed on your machine.
 -    VirtualBox installation is accessible [here](https://www.virtualbox.org/wiki/Linux_Downloads)
 -    Vagrant — [here](https://www.vagrantup.com/downloads.html)
 -    Ansibe - [here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
+-    Python-vagrant library should be installed ```pip install python-vagrant```
