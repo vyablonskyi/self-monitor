@@ -1,0 +1,149 @@
+---
+- name: selftest package installation
+  hosts: selftesthost
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  vars:
+    grafana_repo_src: ./files/grafana.repo
+    grafana_repo_dest: /etc/yum.repos.d
+    grafana_ini_src: ./files/grafana.ini
+    grafana_ini_dest: /etc/grafana
+    apache_vhost_src: ./files/ssl.conf
+    apache_vhost_dest: /etc/httpd/conf.d
+
+  tasks:
+  - name: Download appropriate RPM for MySQL
+    get_url:
+      url: https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+      dest: /opt
+
+  - name: Install package
+    yum:
+      name: /opt/mysql80-community-release-el7-3.noarch.rpm
+      state: present
+
+  - name: Install MySQL
+    yum:
+      name: mysql-server
+      state: installed
+
+  - name: Start the MySQL service
+    service:
+      name: mysqld
+      state: started
+      enabled: true
+
+  - name: Change mysql root password and keep track in
+    shell: |
+      password_match=`awk '/A temporary password is generated for/ {a=$0} END{ print a }' /var/log/mysqld.log | awk '{print $(NF)}'`
+      echo $password_match
+      mysql -uroot -p$password_match --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'klrUr42!tRep9'; flush privileges; "
+      echo "[client]" > /root/.my.cnf
+      echo "user=root" >> /root/.my.cnf
+      echo "password=klrUr42!tRep9" >> /root/.my.cnf
+    args:
+      creates: /root/.my.cnf
+    register: change_temp_pass
+    notify: restart mysqld
+
+  - meta: flush_handlers
+  - debug:
+      var: change_temp_pass
+
+  - name: Create MySQL databage for Grafana, and appropriate MySQLuser
+    shell: |
+      mysql -uroot -p'klrUr42!tRep9' -e "CREATE DATABASE grafana CHARACTER SET UTF8 COLLATE UTF8_BIN;"
+      mysql -uroot -p'klrUr42!tRep9' -e "CREATE USER 'grafana'@'%' IDENTIFIED BY 'het2Q&bAs'; GRANT ALL PRIVILEGES ON grafana.* TO 'grafana'@'%';"
+    args:
+      creates: /var/lib/mysql/grafana
+
+  - name: Put SELinux in permissive mode, logging actions that would be blocked.
+    selinux:
+      policy: targeted
+      state: permissive
+
+  - name: Disable SELinux
+    selinux:
+      state: disabled
+
+  - name: Copy grafana.repo file
+    copy: src={{ grafana_repo_src }} dest={{ grafana_repo_dest }} mode=0644
+
+  - name: Install Grafana
+    yum:
+      name: grafana
+      state: installed
+
+  - name: Start Grafana
+    service:
+      name: grafana-server
+      state: started
+      enabled: true
+
+  - name: Copy Grafana ini file
+    copy: src={{ grafana_ini_src }} dest={{ grafana_ini_dest }} mode=0640
+    notify: restart grafana
+
+  - name: Install Apache
+    yum:
+      name: httpd
+      state: installed
+
+  - name: Install mod-ssl
+    yum:
+      name: mod_ssl
+      state: installed
+
+  - name: Enable Apache Mod_Rewrite
+    apache2_module:
+      name: rewrite
+      state: present
+
+  - name: Start Apache
+    service:
+      name: httpd
+      state: started
+      enabled: true
+
+  - name: Copy Apache vhost config file
+    copy: src={{ apache_vhost_src }} dest={{ apache_vhost_dest }} mode=0644
+    notify: restart apache
+
+  - name: Install EPEL repository
+    yum:
+      name: epel-release
+      state: installed
+
+  - name: Install Collectd
+    yum: 
+      name: collectd
+      state: installed
+
+  - name: Start Collectd service
+    service:
+      name: collectd
+      state: started
+      enabled: true
+
+  handlers:
+  - name: restart mysqld
+    service: 
+      name: mysqld 
+      state: restarted
+
+  - name: restart apache
+    service: 
+      name: httpd
+      state: restarted
+  
+  - name: restart grafana
+    service: 
+      name: grafana-server
+      state: restarted
+
+  - name: restart collectd
+    service :
+      name: collectd
+      state: restarted
